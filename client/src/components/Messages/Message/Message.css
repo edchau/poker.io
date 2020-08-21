@@ -1,7 +1,7 @@
 .messageBox {
   background: #F3F3F3;
   border-radius: 20px;
-  padding: 5px 20px;
+  padding: 1px 12px;
   color: white;
   display: inline-block;
   max-width: 80%;
@@ -11,7 +11,7 @@
   width: 100%;
   letter-spacing: 0;
   float: left;
-  font-size: 1.1em;
+  font-size: .8em;
   word-wrap: break-word;
 }
 
@@ -22,7 +22,7 @@
 .messageContainer {
   display: flex;
   justify-content: flex-end;
-  padding: 0 5%;
+  padding: 0 3%;
   margin-top: 3px;
 }
 
@@ -32,14 +32,15 @@
   font-family: Helvetica;
   color: #828282;
   letter-spacing: 0.3px;
+  font-size: .8em;
 }
 
 .pl-10 {
-  padding-left: 10px;
+  padding-left: 7px;
 }
 
 .pr-10 {
-  padding-right: 10px;
+  padding-right: 7px;
 }
 
 .justifyStart {

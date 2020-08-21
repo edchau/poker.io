@@ -1,9 +1,12 @@
 .outerContainer {
-  display: flex;
-  justify-content: center;
+  position: relative;
+  justify-content: left;
+  padding-left: 20px;
   align-items: center;
-  height: 100vh;
+  height: 100%;
+  width: 100%;
   background-color: #1A1A1D;
+  overflow: auto;
 }
 
 .container {
@@ -13,7 +16,23 @@
   background: #FFFFFF;
   border-radius: 8px;
   height: 60%;
-  width: 35%;
+  width: 20%;
+}
+
+.game {
+  color: white;
+  position: absolute;
+  top: 25%;
+  left: 25%;
+}
+
+.table {
+  height: 550px;
+  width: 900px;
+}
+
+.mainPlayer {
+  position: inherit;
 }
 
 @media (min-width: 320px) and (max-width: 480px) {
@@ -27,8 +46,8 @@
   }
 }
 
-@media (min-width: 480px) and (max-width: 1200px) {
+@media (max-width: 1000px) {
   .container {
-    width: 60%;
+    display: none;
   }
 }

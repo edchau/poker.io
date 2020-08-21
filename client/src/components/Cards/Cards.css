@@ -1,0 +1,21 @@
+.card1 {
+  position: relative;
+  height: 100px;
+  width: 80px;
+  top:-700px;
+  left:780px;
+}
+
+.card2 {
+  position: relative;
+  height: 100px;
+  width: 80px;
+  top:-700px;
+  left:780px;
+}
+
+.mainPlayer h1 {
+  position: relative;
+  top:-700px;
+  left:780px; 
+}
