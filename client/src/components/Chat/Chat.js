@@ -31,7 +31,7 @@ const Chat = ({ location }) => {
     const [river, setRiver] = useState([])
     const [turn, setTurn] = useState([])
     const [flop, setFlop] = useState([])
-    const [play, setPlay] = useState(false)
+    const [play, setPlay] = useState([])
 
     const ENDPOINT = 'localhost:5000'
 
@@ -96,12 +96,8 @@ const Chat = ({ location }) => {
 
         })
 
-        socket.on('start', () => {
-            
-        })
-
-        socket.on('playTurn', () => {
-
+        socket.on('playTurn', (play) => {
+            setPlay(play)
         })
     }, [])
 
@@ -117,6 +113,10 @@ const Chat = ({ location }) => {
         socket.emit('getNewHand')
     }
 
+    const call = () => {
+        socket.emit('next')
+    }
+
     const turnRiver = () => {
         socket.emit('getRiver')
     }
@@ -130,6 +130,7 @@ const Chat = ({ location }) => {
     }
 
     const round = () => {
+        console.log("START")
         socket.emit('round')
     }
 
@@ -143,7 +144,7 @@ const Chat = ({ location }) => {
             </div>
             <div className="game">
                 <img className="table" src={table} alt="table" />
-                <Actions generateNewHand={round} />
+                <Actions start={round} call={call} play={play} />
                 <Cards chips={chips} hand={hand} />
                 <Community river={river} turn={turn} flop={flop} />
             </div>
