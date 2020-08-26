@@ -245,7 +245,7 @@ const hasFlush = (cards) => {
 }
 
 const hasFullHouse = (cards) => {
-    // returns [ThreeOfAKind rank, pair rank] if the full house exists, otherwise 0
+    // returns [triplet1, triplet2, triplet3, pair1, pair2] if the full house exists, otherwise 0
     // assumes no four of a kinds, as hasForOfAKind should handle that.
     var hand = []
     var remainder = []
@@ -282,7 +282,52 @@ const hasFullHouse = (cards) => {
 }
 
 const hasFourOfAKind = (cards) => {
-    // returns [FourOfAKind rank, highcard 1]
+    // returns [quadruplet1, quadruplet2, quadruplet3, quadruplet4, highcard1]
+    var hand = []
+    var remainder = []
+    var cards = sortHand(cards)
+    for (i = cards.length - 4; i >= 0; i--) {
+        // add the set if it exists
+        if (cards[i].rank == cards[i+1].rank 
+         && cards[i+1].rank == cards[i+2].rank
+         && cards[i+2].rank == cards[i+3].rank) {
+            hand.push(cards[i])
+            hand.push(cards[i+1])
+            hand.push(cards[i+2])
+            hand.push(cards[i+3])
+            // we found quads, so we can break out, and collect 1 more card for our high card
+            remainder.push(cards[i-1])
+            break
+        } else {
+            remainder.push(cards[i+3])
+        }
+    }
+    // no sets were found
+    if (hand.length == 0) { return 0 }
+    // add the high card
+    hand.push(remainder[0])
+    return hand
+}
+
+const hasStraightFlush = (cards) => {
+    flushCards = hasFlush(cards)
+    if (flushCards == 0) {
+        return 0
+    // 1, 2, 3, 4, 5 || 1, 13, 12, 11, 10
+    } else if (flushCards[0].rank == 1 &&
+              (flushCards[1].rank == 5 || flushCards[1].rank == 13)
+            && flushCards[1].rank - 1 == flushCards[2].rank
+            && flushCards[2].rank - 1 == flushCards[3].rank
+            && flushCards[3].rank - 1 == flushCards[4].rank) {
+                return flushCards
+    } else if (flushCards[0].rank - 1 == flushCards[1].rank
+            && flushCards[1].rank - 1 == flushCards[2].rank
+            && flushCards[2].rank - 1 == flushCards[3].rank
+            && flushCards[3].rank - 1 == flushCards[4].rank) {
+                return flushCards
+    } else {
+        return 0
+    }
 }
 
 const checkTypeWin = () => {
@@ -317,15 +362,20 @@ const getNextPlayer = () => {
 oneD = {rank : 1, suit : 'diamond'}
 twoH = {rank : 2, suit : 'heart'}
 twoD = {rank : 2, suit : 'diamond'}
-twoC = {rank : 2, suit : 'clubs'}
+twoC = {rank : 2, suit : 'club'}
+twoS = {rank : 2, suit : 'spade'}
 threeH = {rank : 3, suit : 'heart'}
 threeD = {rank : 3, suit : 'diamond'}
 threeC = {rank : 3, suit : 'club'}
+threeS = {rank : 3, suit : 'spade'}
 fourH = {rank : 4, suit : 'heart'}
 fourD = {rank : 4, suit : 'diamond'}
 fiveH = {rank : 5, suit : 'heart'}
+fiveD = {rank : 5, suit : 'diamond'}
 sixC = {rank : 6, suit : 'club'}
 sevenC = {rank : 7, suit : 'club'}
+eightC = {rank : 8, suit : 'club'}
+nineC = {rank : 9, suit : 'club'}
 tenD = {rank : 10, suit : 'diamond'}
 tenC = {rank : 10, suit : 'club'}
 elevenD = {rank : 11, suit : 'diamond'}
@@ -359,8 +409,20 @@ thirteenD = {rank : 13, suit : 'diamond'}
 // console.log(hasFlush([oneD, twoD, threeD, fourD, tenD, elevenD])) // [1D, 3D, 4D, 10D, 11D]
 // console.log(hasFlush([oneD, twoD, threeD, fourH, tenD, elevenD])) // [1D, 2D, 3D, 10D, 11D]
 
-console.log(hasFullHouse([twoH, twoD, twoC, threeH, threeD])) // [2, 3]
-console.log(hasFullHouse([twoH, twoD, twoC, threeH, threeD, fourH, fourD])) // [2, 4]
-console.log(hasFullHouse([twoH, twoD, twoC, threeH, threeD, threeC, fourH, fourD])) // [3, 4]
+// console.log(hasFullHouse([twoH, twoD, twoC, threeH, threeD])) // [2, 3]
+// console.log(hasFullHouse([twoH, twoD, twoC, threeH, threeD, fourH, fourD])) // [2, 4]
+// console.log(hasFullHouse([twoH, twoD, twoC, threeH, threeD, threeC, fourH, fourD])) // [3, 4]
+
+// console.log(hasFourOfAKind([twoH, twoC, twoD, twoS, threeC, threeD, threeH])) // [2H, 2C, 2D, 2S, 3C/D/H]
+// console.log(hasFourOfAKind([twoH, threeC, threeD, threeH, threeS, oneD, thirteenD])) // [3H, 3C, 3D, 3S, 1D]
+
+console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenD])) // [1D, 13D, 12D, 11D, 10D]
+console.log(hasStraightFlush([oneD, twoD, threeD, fourD, fiveD])) // [1D, 5D, 4D, 3D, 2D]
+console.log(hasStraightFlush([sixC, sevenC, eightC, nineC, tenC])) // [6C, 7C, 8C, 9C, 10C]
+console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenD, twoD, threeD, fourD, fiveD])) // [1D, 13D, 12D, 11D, 10D]
+console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenC])) // 0
+console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, twoD])) // 0
+
+
 
 //module.exports = { getStartingPlayers, getNextPlayer }
