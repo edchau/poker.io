@@ -79,11 +79,28 @@ const Winner = () => {
 
 const getBestHand = (cards) => {
     // Of a list of 7 cards in 'CARDS', return the best hand possible. Assumes cards == length 7.
+    x = hasStraightFlush(cards)
+    if (x) { return x }
+    x = hasFourOfAKind(cards)
+    if (x) { return x }
+    x = hasFullHouse(cards)
+    if (x) { return x }
+    x = hasFlush(cards)
+    if (x) { return x }
+    x = hasStraight(cards)
+    if (x) { return x }
+    x = hasThreeOfAKind(cards)
+    if (x) { return x }
+    x = hasPairs(cards)
+    if (x) { return x }
+
+    return hasHighCard(cards)
 
 }
 
 const compareHands = (hand1, hand2) => {
     // return 0 if hand1 is better, and 1 if hand2 is better.
+    
 }
 
 const sortHand = (cards) => {
@@ -416,13 +433,11 @@ thirteenD = {rank : 13, suit : 'diamond'}
 // console.log(hasFourOfAKind([twoH, twoC, twoD, twoS, threeC, threeD, threeH])) // [2H, 2C, 2D, 2S, 3C/D/H]
 // console.log(hasFourOfAKind([twoH, threeC, threeD, threeH, threeS, oneD, thirteenD])) // [3H, 3C, 3D, 3S, 1D]
 
-console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenD])) // [1D, 13D, 12D, 11D, 10D]
-console.log(hasStraightFlush([oneD, twoD, threeD, fourD, fiveD])) // [1D, 5D, 4D, 3D, 2D]
-console.log(hasStraightFlush([sixC, sevenC, eightC, nineC, tenC])) // [6C, 7C, 8C, 9C, 10C]
-console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenD, twoD, threeD, fourD, fiveD])) // [1D, 13D, 12D, 11D, 10D]
-console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenC])) // 0
-console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, twoD])) // 0
-
-
+// console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenD])) // [1D, 13D, 12D, 11D, 10D]
+// console.log(hasStraightFlush([oneD, twoD, threeD, fourD, fiveD])) // [1D, 5D, 4D, 3D, 2D]
+// console.log(hasStraightFlush([sixC, sevenC, eightC, nineC, tenC])) // [6C, 7C, 8C, 9C, 10C]
+// console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenD, twoD, threeD, fourD, fiveD])) // [1D, 13D, 12D, 11D, 10D]
+// console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenC])) // 0
+// console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, twoD])) // 0
 
 //module.exports = { getStartingPlayers, getNextPlayer }
