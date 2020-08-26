@@ -2,18 +2,16 @@ import React from 'react'
 
 import './Actions.css'
 
-const checkStyle = {height: '50px', width: '100px'}
-const callStyle = {height: '50px', width: '100px'}
-const raiseStyle = {height: '50px', width: '100px'}
-const foldStyle = {height: '50px', width: '100px'}
-const invis = {height: '0px', width: '0px'}
+const style = {height: '50px', width: '100px', display:'inline-block'}
+const invis = {height: '0px', width: '0px', display:'none'}
 
-const Actions = ({ start, call, play }) => (
+const Actions = ({ round, start, check, call, raise, fold, play }) => (
     <div className="mainPlayer">
-        <button onClick={start} style={play.length > 0 ? checkStyle : invis}>check</button>
-        <button onClick={call} style={play.length > 0 ? callStyle : invis}>call</button>
-        <button style={play.length > 0 ? raiseStyle : invis}>raise</button>
-        <button style={play.length > 0 ? foldStyle : invis}>fold</button>
+        <button onClick={round} style={start.length > 0 ? invis : style}>start</button>
+        <button onClick={check} style={play.length > 0 ? style : invis}>check</button>
+        <button onClick={call} style={play.length > 0 ? style : invis}>call</button>
+        <button onClick={raise} style={play.length > 0 ? style : invis}>raise</button>
+        <button onClick={fold} style={play.length > 0 ? style : invis}>fold</button>
     </div>
 )
 

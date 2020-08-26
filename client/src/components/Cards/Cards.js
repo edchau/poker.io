@@ -2,16 +2,21 @@ import React from 'react'
 
 import './Cards.css'
 
-import twoC from '../../icons/cards/2C.png'
-import twoD from '../../icons/cards/2D.png'
-
-
-const Cards = ({ chips, hand }) => (
+const Cards = ({ chips, hand, deck1, deck2 }) => (
     <div className="mainPlayer">
         <h1>Your chips: {chips}</h1>
-        <h1>Your cards: {hand}</h1>
-        <img className="card1" src={twoC} alt="card" />
-        <img className="card2" src={twoD} alt="card" />
+        <h1>Your cards:</h1>
+
+        {hand.map((card, i) => 
+            <div key={i}>
+                <img className="card1" 
+                    src={hand[0] != null && deck1 != null ? deck1[hand[0].card1.rank-1] : null} 
+                    alt="card" />
+                <img className="card2" 
+                    src={hand[0] != null && deck1 != null ? deck2[hand[0].card2.rank-1] : null} 
+                    alt="card" />
+            </div>
+        )}
     </div>
 )
 

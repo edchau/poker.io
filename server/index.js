@@ -16,7 +16,7 @@ const io = socketio(server)
 
 app.use(router)
 
-deck = ['twoC', 'twoD', 'twoS', 'twoH']
+// deck = ['twoC', 'twoD', 'twoS', 'twoH']
 
 io.on('connection', (socket) => {
     socket.on('join', ({ name, room }, callback) => {
@@ -29,6 +29,10 @@ io.on('connection', (socket) => {
 
         socket.join(user.room)
 
+        if(getUsersInRoom(user.room).length == 1) {
+            io.to(socket.id).emit('start')
+        }
+
         io.to(user.room).emit('roomData', {room:user.room, users:getUsersInRoom(user.room)})
 
         callback()
@@ -37,18 +41,15 @@ io.on('connection', (socket) => {
     socket.on('sendMessage', (message, callback) => {
         const user = getUser(socket.id)
 
-
         io.to(user.room).emit('message', {user: user.name, text: message})
 
         callback()
     })
 
-    socket.on('getNewHand', () => {
-        const user = getUser(socket.id)
-
-        io.to(socket.id).emit('hand', {card1: 'twoC', card2: 'twoD'})
-        io.to(user.room).emit('hands', {user: user.name, card1: 'twoC', card2: 'twoD'})
-        io.to(user.room).emit('message', {user: '', text: `${user.name} has twoC and twoD.`})
+    socket.on('getNewHand', (user) => {
+        const hand = poker.generateHand()
+        console.log(hand)
+        io.to(user.id).emit('hand', hand)
     })
 
     socket.on('setPot', (pot) => {
@@ -61,37 +62,69 @@ io.on('connection', (socket) => {
         io.to(socket.id).emit('chips', chips)
     })
 
-    socket.on('getRiver', () => {
+    socket.on('getFlop', () => {
         const user = getUser(socket.id)
-        io.to(user.room).emit('river', {card1: 'twoC', card2: 'twoD', card3: 'twoD'})
-        io.to(user.room).emit('message', {user: '', text: `River`})
+
+        const flop = poker.generateFlop()
+        console.log(flop)
+
+        io.to(user.room).emit('flop', flop)
     })
 
     socket.on('getTurn', () => {
         const user = getUser(socket.id)
 
-        io.to(user.room).emit('turn', {card: 'twoC'})
-        io.to(user.room).emit('message', {user: '', text: `Turn`})
+        const turn = poker.generateTurn()
+        console.log(turn)
+
+        io.to(user.room).emit('turn', turn)
     })
 
-    socket.on('getFlop', () => {
+    socket.on('getRiver', () => {
         const user = getUser(socket.id)
 
-        io.to(user.room).emit('flop', {card: 'twoC'})
-        io.to(user.room).emit('message', {user: '', text: `Flop`})
+        const river = poker.generateRiver()
+        console.log(river)
+
+        io.to(user.room).emit('river', river)
     })
 
     socket.on('next', () => {
+        const user = getUser(socket.id)
         io.to(socket.id).emit('playTurn', [])
-        nextUser = poker.getNextPlayer()
-        console.log(nextUser)
-        io.to(nextUser.id).emit('playTurn', [true])
+        var nextUser = poker.getNextPlayer()
+        if (nextUser == null) {
+            const round = poker.getRoundCount()
+            console.log(round)
+            if (round == 1) {
+                socket.emit('callFlop')
+            } else if (round == 2) {
+                socket.emit('callTurn')
+            } else if (round == 3) {
+                socket.emit('callRiver')
+            } else if (round == 4) {
+                const users = getUsersInRoom(user.room)
+
+                users.forEach(u => {
+                    io.to(u.id).emit('playTurn', [])
+                })
+        
+                console.log("WIN")
+
+                io.to(user.room).emit('reset')
+            }
+            nextUser = poker.getNextPlayer()
+        }
+        if (nextUser != null) {
+            io.to(nextUser.id).emit('playTurn', [true])
+        }
     })
 
     socket.on('round', () => {
         const user = getUser(socket.id)
         poker.getStartingPlayers(user.room)
         const next = poker.getNextPlayer()
+        console.log("HI", next)
         io.to(next.id).emit('playTurn', [true])
     })
 
