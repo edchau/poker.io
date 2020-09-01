@@ -27,12 +27,17 @@ const restart = () => {
 }
 
 const fold = (id) => {
-    //  remove player from active players
-    const index = activePlayers.findIndex((player) => player.id === id)
-    
-    if (index !== -1) {
-        activePlayers.splice(index, 1)
+    // remove player from activePlayers
+    // remove the hand from playerHands
+    const playerIndex = activePlayers.findIndex((player) => player.id === id)
+    if (playerIndex !== -1) {
+        activePlayers.splice(playerIndex, 1)
     }
+    const handIndex = activePlayers.findIndex((hand) => hand.id === id)
+    if (handIndex !== -1) {
+        playerHands.splice(handIndex, 1)
+    }
+
 }
 
 const generateHand = (id) => {
@@ -75,23 +80,44 @@ const generateOneCommunity = () => {
 const Winner = () => {
     // determine winner given users and community cards
     // assume the hand has went to showdown (multiple players, 5 community cards, bets in)
-    var winner = activePlayers[0]
-    var winnerHand = getBestHand(playerHands.find(x => x.id == winner.id).hand.concat(community))
+    var winner = playerHands[0]
+    var winnerHand = getBestHand(winner.hand.concat(community))
+    var ties = []
+    for (i = 1; i < playerHands.length; i++) {
+        var player = playerHands[i]
+        var playerHand = getBestHand(player.hand.concat(community))
+
+        var comparison = compareHands(winnerHand, playerHand)
+        if (comparison == 1) {
+            winner = player
+            winnerHand = playerHand
+        } else if (comparison == -1) {
+            if (!ties.includes(winner.id)) {
+                ties.push(winner.id)
+            }
+            ties.push(player.id)
+        } // else, the winner is still the winner
+    }
+    if (ties.length > 0) {
+        return ties
+    }
+    return winner.id
+    
 }
 
 
 const getBestHand = (cards) => {
     // Of a list of 7 cards in 'CARDS', return the best hand possible. Assumes cards == length 7.
-    x = hasStraightFlush(cards)
-    if (x) { return x }
+    // x = hasStraightFlush(cards)
+    // if (x) { return x }
     x = hasFourOfAKind(cards)
     if (x) { return x }
     x = hasFullHouse(cards)
     if (x) { return x }
     x = hasFlush(cards)
     if (x) { return x }
-    x = hasStraight(cards)
-    if (x) { return x }
+    // x = hasStraight(cards)
+    // if (x) { return x }
     x = hasThreeOfAKind(cards)
     if (x) { return x }
     x = hasPairs(cards)
@@ -108,7 +134,6 @@ const compareHands = (hand1, hand2) => {
     // with the name of the hand at the end of the hand
     var chn = compareHandNames(hand1[5], hand2[5])
     if (chn > -1) { return chn }
-
     var handName = hand1[5]
     if (handName == 'High Card' || handName == 'Straight') {
         return forwardCompareRanks(hand1, hand2)
@@ -152,20 +177,51 @@ const compareHandNames = (name1, name2) => {
     // Returns -1 if they are the same
     if (name1 == name2) { return -1 }
 
-    if (hand1 == 'High Card') { return 1 } 
+    if (name1 == 'High Card') { return 1 } 
 
-    else if (hand1 == '1 Pair') {
-        if (hand2 == 'High Card') { return 0 } 
+    else if (name1 == '1 Pair') {
+        if (name2 == 'High Card') { return 0 } 
+        else {
+            return 1 }
+    } 
+    else if (name1 == '2 Pair') {
+        if (name2 == '1 Pair' || name2 == 'High Card') { return 0 } 
         else { return 1 }
     } 
-    else if (hand1 == '2 Pair') {
-        if (hand2 == '1 Pair' || hand2 == 'High Card') { return 0 } 
-        else { return 1 }
-    } 
-    else if (hand1 == 'Three of a kind') {
-        if (hand2 == '2 Pair' || hand2 == '1 Pair' || hand2 == 'High Card') {
+    else if (name1 == 'Three of a kind') {
+        if (name2 == '2 Pair' || name2 == '1 Pair' || name2 == 'High Card') {
             return 0 } 
         else { return 1 }
+    }
+    else if (name1 == 'Straight') {
+        if (name2 == '2 Pair' || name2 == '1 Pair' 
+         || name2 == 'High Card' || name2 == 'Three of a kind') {
+            return 0 } 
+        else { return 1 }
+    }
+    else if (name1 == 'Flush') {
+        if (name2 == '2 Pair' || name2 == '1 Pair' || name2 == 'High Card'
+        || name2 == 'Three of a kind' || name2 == 'Straight') {
+            return 0 } 
+        else { return 1 }
+    }
+    else if (name1 == 'Full House') {
+        if (name2 == '2 Pair' || name2 == '1 Pair' || name2 == 'High Card'
+        || name2 == 'Three of a kind' || name2 == 'Straight' || name2 == 'Flush') {
+            return 0 } 
+        else { return 1 }
+    }
+    else if (name1 == 'Full House') {
+        if (name2 == 'Four of a kind' || name2 == 'Straight Flush') {
+            return 1 } 
+        else { return 0 }
+    }
+    else if (name1 == 'Four of a kind') {
+        if (name2 == 'Straight Flush') {
+            return 1 } 
+        else { return 0 }
+    } else {
+        return 0
     }
 }
 
@@ -240,7 +296,7 @@ const hasPairs = (cards) => {
         hand.push(singletons[j])
         j++
     }
-    hand.push(numPairs + " pair")
+    hand.push(numPairs + " Pair")
     return hand
 }
 
@@ -521,5 +577,20 @@ thirteenD = {rank : 13, suit : 'diamond'}
 // console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenD, twoD, threeD, fourD, fiveD])) // [10D, 11D, 12D, 13D, 1D]
 // console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenC])) // 0
 // console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, twoD])) // 0
+
+// playerHands.push({id : 1, hand : [oneD, tenD]}, 
+//                  {id : 2, hand : [elevenD, elevenH]})
+// community.push(twoD, threeD, eightC, tenC, elevenS)
+// console.log(Winner())
+
+// playerHands.push({id : 1, hand : [oneD, tenD]}, 
+//                  {id : 2, hand : [elevenD, elevenH]})
+// community.push(twoD, threeD, eightC, thirteenD, elevenS)
+// console.log(Winner())
+
+// playerHands.push({id : 1, hand : [threeH, threeC]}, 
+//                  {id : 2, hand : [elevenD, elevenH]})
+// community.push(threeS, threeD, eightC, thirteenD, elevenS)
+// console.log(Winner())
 
 //module.exports = { getStartingPlayers, getNextPlayer }
