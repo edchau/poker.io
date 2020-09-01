@@ -10,7 +10,7 @@ const ranks = [1,2,3,4,5,6,7,8,9,10,11,12,13]
 // populate deck
 for (s in suits) {
     for (r in ranks) {
-        deck.push({rank : parseInt(r+1), 
+        deck.push({rank : parseInt(r)+1, 
                    suit : suits[s]})
     }
 }
@@ -31,17 +31,20 @@ const fold = (id) => {
     const index = activePlayers.findIndex((player) => player.id === id)
     
     if (index !== -1) {
-        activePlayers.splice(index, 1)[0]
+        activePlayers.splice(index, 1)
     }
 }
 
-const generateHand = () => {
-    // generates new hand (two cards)
+const generateHand = (id) => {
+    // generates new hand (two cards) for player id
     const random1 = Math.floor(Math.random() * cardsInPlay.length)
-    cardsInPlay.splice(random1, 1)
+    var card1 = deck[cardsInPlay[random1]]
     const random2 = Math.floor(Math.random() * cardsInPlay.length)
+    var card2 = deck[cardsInPlay[random2]]
+    playerHands.push({id : id, hand : [card1, card2]})
+    cardsInPlay.splice(random1, 1)
     cardsInPlay.splice(random2, 1)
-    return {card1: deck[random1], card2: deck[random2]} 
+    return {card1: card1, card2: card2}
 }
 
 const generateFlop = () => {
@@ -52,30 +55,30 @@ const generateFlop = () => {
 }
 
 const generateTurn = () => {
+    // generate 1 card for the turn
     return {card4: generateOneCommunity()}
 }
 
 const generateRiver = () => {
+    // generate 1 card for the river
     return {card5: generateOneCommunity()}
 }
 
 const generateOneCommunity = () => {
-    // generate 1 card for turn/river
+    // generate 1 card from deck for the community cards
     const random = Math.floor(Math.random() * cardsInPlay.length)
+    community.concat([deck[cardsInPlay[random]]])
     cardsInPlay.splice(random, 1)
-    community += [deck[random]]
     return deck[random]
 }
 
 const Winner = () => {
     // determine winner given users and community cards
-    if (community.length < 5) {
-
-    } else {
-        var winner = activePlayers[0]
-        var bestHand = getBestHand([winner])
-    }
+    // assume the hand has went to showdown (multiple players, 5 community cards, bets in)
+    var winner = activePlayers[0]
+    var winnerHand = getBestHand(playerHands.find(x => x.id == winner.id).hand.concat(community))
 }
+
 
 const getBestHand = (cards) => {
     // Of a list of 7 cards in 'CARDS', return the best hand possible. Assumes cards == length 7.
@@ -99,12 +102,75 @@ const getBestHand = (cards) => {
 }
 
 const compareHands = (hand1, hand2) => {
-    // return 0 if hand1 is better, and 1 if hand2 is better.
-    
+    // Return 0 if hand1 is better, and 1 if hand2 is better.
+    // Return -1 if they are the same.
+    // Assumes they are both actually 5 card hands (lists of 5, objects with cards attributes)
+    // with the name of the hand at the end of the hand
+    var chn = compareHandNames(hand1[5], hand2[5])
+    if (chn > -1) { return chn }
+
+    var handName = hand1[5]
+    if (handName == 'High Card' || handName == 'Straight') {
+        return forwardCompareRanks(hand1, hand2)
+    } else if (handName == '1 Pair' || handName == '2 Pair'
+            || handName == 'Three of a kind' || handName == '') {
+        return backwardCompareRanks(hand1, hand2)
+    }
+}
+
+const forwardCompareRanks = (hand1, hand2) => {
+    // Goes from first card to last, comparing the hands.
+    // Returns the same values as compareHands
+    // Assumes same input as compareHands
+    for (i = 0; i < 5; i++) {
+        if (hand1[i] > hand2[i]) {
+            return 0
+        } else if (hand1[i] < hand2[i]) {
+            return 1
+        }
+    }
+    return -1
+}
+
+const backwardCompareRanks = (hand1, hand2) => {
+    // Goes from last card to first, comparing the hands.
+    // Returns the same values as compareHands
+    // Assumes same input as compareHands
+    for (i = 4; i >= 0; i--) {
+        if (hand1[i] > hand2[i]) {
+            return 0
+        } else if (hand1[i] < hand2[i]) {
+            return 1
+        }
+    }
+    return -1
+}
+
+const compareHandNames = (name1, name2) => {
+    // Returns 0 if name1 is a better hand than name2
+    // Returns 1 if name1 is a worse hand than name2
+    // Returns -1 if they are the same
+    if (name1 == name2) { return -1 }
+
+    if (hand1 == 'High Card') { return 1 } 
+
+    else if (hand1 == '1 Pair') {
+        if (hand2 == 'High Card') { return 0 } 
+        else { return 1 }
+    } 
+    else if (hand1 == '2 Pair') {
+        if (hand2 == '1 Pair' || hand2 == 'High Card') { return 0 } 
+        else { return 1 }
+    } 
+    else if (hand1 == 'Three of a kind') {
+        if (hand2 == '2 Pair' || hand2 == '1 Pair' || hand2 == 'High Card') {
+            return 0 } 
+        else { return 1 }
+    }
 }
 
 const sortHand = (cards) => {
-    // sorts hand by rank of cards. breaks ties arbitrarily
+    // sorts hand low to high by rank of cards. breaks ties arbitrarily
     cards.sort(function(a, b){
                 if (a.rank == 1 || b.rank == 1) {
                     return b.rank - a.rank
@@ -115,19 +181,22 @@ const sortHand = (cards) => {
 }
 
 /* The "has" methods below return the best hand of that category if it exists; otherwise, returns 0 
-   They each assume that the hands better than them are not possible. */
+   They each assume that the hands better than them are not possible. 
+   All functions also assume the input is of length 5 or greater. */
 
-const hasHighCard = (cards, cardsNeeded = 5) => {
-    // returns the largest cards in the hand, in descending order
-    // returns 5 items if cards.length > 5, or cards.length items if cards.length <= 5
+const hasHighCard = (cards) => {
+    // returns the largest cards in the hand, lowest to highest.
+    // returns 5 items if cards.length > 5, or cards.length items if cards.length == 5
     cards = sortHand(cards)
-    if (cards.length > cardsNeeded) {
+    if (cards.length > 5) {
         hand = []
-        for (i = cards.length - 1; i >= cards.length - cardsNeeded; i--) {
-            hand.push(cards[i])
+        for (i = cards.length - 1; i >= cards.length - 5; i--) {
+            hand.unshift(cards[i]) // ensure low to high
         }
+        hand.push("High Card")
         return hand
     } else {
+        cards.push("High Card")
         return cards
     }
 }
@@ -164,12 +233,14 @@ const hasPairs = (cards) => {
     // no pairs were found
     if (hand.length == 0) { return 0 }
     // fill out the hands with high cards
+    var numPairs = hand.length / 2
     var j = 0
     while (hand.length < 5) {
         // singleton is ordered high to low
         hand.push(singletons[j])
         j++
     }
+    hand.push(numPairs + " pair")
     return hand
 }
 
@@ -205,34 +276,37 @@ const hasThreeOfAKind = (cards) => {
         hand.push(singletons[j])
         j++
     }
+    hand.push("Three of a kind")
     return hand
 }
 
-const hasStraight = (cards) => {
-    // returns the highest rank of the straight if it exists, 0 otherwise.
-    // ex: cards = [ace, two, three, four, five, ten, king], hasStraight(cards) = 5
-    // ex: cards = [ace, two, ten, jack, queen, king], hasStraight(cards) = 14
+const hasStraight = (cards) => { // UNFINISHED NEEDS FIXING
+    // returns the cards of the best possible straight if it exists, 0 otherwise
+    // ex: cards = [ace, two, three, four, five, ten, king], hasStraight(cards) = [ace, two, three, four, five]
+    // ex: cards = [ace, two, ten, jack, queen, king], hasStraight(cards) = [ten, jack]
     cards = sortHand(cards)
-    // var ranks = []
-    // cards.forEach(card => {ranks.push(card.rank)})
-    // if (ranks.includes(1)) {
-    //     ranks.push(14) // ace is also the largest
-    // }
-    // ranks.sort(function(a, b){return a-b})
-    var count = 1
-    var max = cards[cards.length - 1]
-    for (i = cards.length - 1; i > 0; i--) {
-        if (cards[i].rank - 1 === cards[i-1].rank 
-         || cards[i].rank === 1 && cards[i-1].rank === 13) {
-            count++
-        } else {
-            count = 1
-            max = cards[i].rank
-        }
-        if (count == 5) {
-            return max
+    var set = [cards[0]]
+    for (i = 1; i < cards.length; i++) {
+        if (set[set.length-1].rank == cards[i].rank - 1) {
+            set.push(cards[i])
         }
     }
+    for (i = set.length-1; i >= 4; i--) {
+        if ([set.length - 1].rank == 1  
+                && (set[i-1].rank == 5 || set[i-1].rank == 13)
+                && set[i-1].rank - 1 == set[i-2].rank
+                && set[i-2].rank - 1 == set[i-3].rank
+                && set[i-3].rank - 1 == set[i-4].rank) {
+                    set.unshift("Straight")
+                    return set.slice(i-4)
+        } else if (set[i].rank - 1 == set[i-1].rank
+                && set[i-1].rank - 1 == set[i-2].rank
+                && set[i-2].rank - 1 == set[i-3].rank
+                && set[i-3].rank - 1 == set[i-4].rank) {
+                    set.unshift("Straight")
+                    return set.slice(i-4)
+        }
+    }   
     return 0
 }
 
@@ -250,6 +324,7 @@ const hasFlush = (cards) => {
                 flushHand.push(cards[i])
                 // return the hand once we have 5 cards
                 if (flushHand.length == 5) {
+                    flushHand.push("Flush")
                     return flushHand
                 }
             }
@@ -295,6 +370,7 @@ const hasFullHouse = (cards) => {
         }
     }
     if (hand.length < 5) { return 0 }
+    hand.push("Full House")
     return hand
 }
 
@@ -323,27 +399,22 @@ const hasFourOfAKind = (cards) => {
     if (hand.length == 0) { return 0 }
     // add the high card
     hand.push(remainder[0])
+    hand.push("Four of a kind")
     return hand
 }
 
 const hasStraightFlush = (cards) => {
-    flushCards = hasFlush(cards)
+    var flushCards = hasFlush(cards)
     if (flushCards == 0) {
         return 0
     // 1, 2, 3, 4, 5 || 1, 13, 12, 11, 10
-    } else if (flushCards[0].rank == 1 &&
-              (flushCards[1].rank == 5 || flushCards[1].rank == 13)
-            && flushCards[1].rank - 1 == flushCards[2].rank
-            && flushCards[2].rank - 1 == flushCards[3].rank
-            && flushCards[3].rank - 1 == flushCards[4].rank) {
-                return flushCards
-    } else if (flushCards[0].rank - 1 == flushCards[1].rank
-            && flushCards[1].rank - 1 == flushCards[2].rank
-            && flushCards[2].rank - 1 == flushCards[3].rank
-            && flushCards[3].rank - 1 == flushCards[4].rank) {
-                return flushCards
     } else {
-        return 0
+        var sf = hasStraight(flushCards.slice(0,5))
+        if (sf != 0) {
+            sf = sf.slice(0,5)
+            sf.push("Straight Flush")
+        }
+        return sf
     }
 }
 
@@ -372,7 +443,7 @@ const getNextPlayer = () => {
     return active
 }
 
-// unit tests
+/* UNIT TESTS */
 
 // console.log(generateHand()) // 2 random cards
 
@@ -401,42 +472,53 @@ elevenS = {rank : 11, suit : 'spade'}
 twelveD = {rank : 12, suit : 'diamond'}
 thirteenD = {rank : 13, suit : 'diamond'}
 
+// var n = 10
+// for (i = 0; i < n; i++) {
+    // generateOneCommunity()
+// }
+
+// console.log(sortHand([oneD, twoH, threeD, nineC, tenD, fiveH, eightC, thirteenD, sevenC]))
+
+// forward
+// console.log(hasHighCard([threeH, fourD, fiveH, sixC, tenD])) // [10D, 6C, 5H, 4D, 3H]
 // console.log(hasHighCard([twoH, twoD, threeH, fourD, fiveH, sixC, tenD])) // [10D, 6C, 5H, 4D, 3H]
 // console.log(hasHighCard([oneD, twoH, threeH, sevenC, tenD, elevenD, thirteenD])) // [1D, 13D, 11D, 10D, 7C]
 // console.log(hasHighCard([oneD, twoH, threeH, sevenC, tenD, elevenD, thirteenD], 2)) // [1D, 13D]
 
+// forward
 // console.log(hasPairs([twoD, threeD, fourH, fiveH])) // 0
 // console.log(hasPairs([twoD, twoH, threeD, fourH, fiveH])) // [2D, 2H, 3D, 4H, 5H]
 // console.log(hasPairs([twoD, twoH, threeD, threeH, fourH, fiveH])) // [2D, 2H, 3D, 3H, 5H]
 // console.log(hasPairs([twoD, threeD, fourH, twoH, fiveH, threeH])) // [2D, 2H, 3D, 3H, 5H]
 // console.log(hasPairs([twoD, twoH, threeH, tenD, tenC, elevenD, elevenH])) // [11H, 11D, 10C, 10D, 3H]
 
-// console.log(hasThreeOfAKind([twoD, twoH, twoC, threeD, fourH, fiveH]))   // [2D, 2H, 2C, 4H, 5H]
-// console.log(hasThreeOfAKind([twoD, threeD, twoH, fourH, fiveH, twoC]))   // [2D, 2H, 2C, 4H, 5H]
+// forward
+// console.log(hasThreeOfAKind([twoD, twoH, twoC, threeD, fourH, fiveH]))   // [2D, 2H, 2C, 5H, 4H]
+// console.log(hasThreeOfAKind([twoD, threeD, twoH, fourH, fiveH, twoC]))   // [2D, 2H, 2C, 5   H, 4H]
+// console.log(hasThreeOfAKind([fourH, fiveH, elevenD, elevenH, elevenS, twelveD, thirteenD])) // [11D, 11H, 11S, 13D, 12D]
 // console.log(hasThreeOfAKind([twoD, twoH, threeD, threeH, fourH, fiveH])) // 0
-// console.log(hasThreeOfAKind([fourH, fiveH, elevenD, elevenH, elevenS, twelveD, thirteenD])) // [11D, 11H, 11S, 12D, 13D]
 
-// console.log(hasStraight([twoD, threeD, fourH, fiveH])) // 0
-// console.log(hasStraight([twoD, threeD, fourH, fiveH, sixC])) // 6
-// console.log(hasStraight([twoD, threeD, fourH, fiveH, sixC, sevenC])) // 7
-// console.log(hasStraight([oneD, tenD, elevenD, twelveD, sixC, thirteenD])) // 1
+// console.log(hasStraight([twoD, threeD, fourH, fiveH, sevenC])) // 0
+// console.log(hasStraight([twoD, threeD, fourH, fiveH, sixC])) // [2D, 3D, 4D, 5D, 6D]
+// console.log(hasStraight([twoD, threeD, fourH, fiveH, sixC, sevenC])) // [3D, 4D, 5D, 6D, 7D]
+// console.log(hasStraight([oneD, tenD, elevenD, twelveD, sixC, thirteenD])) // [10D, 11D, 12D, 13D, 1D]
 
 // console.log(hasFlush([oneD, twoD, threeD, fourD])) // 0
 // console.log(hasFlush([oneD, twoD, threeD, fourD, tenD])) // [1D, 2D, 3D, 4D, 10D]
 // console.log(hasFlush([oneD, twoD, threeD, fourD, tenD, elevenD])) // [1D, 3D, 4D, 10D, 11D]
 // console.log(hasFlush([oneD, twoD, threeD, fourH, tenD, elevenD])) // [1D, 2D, 3D, 10D, 11D]
 
-// console.log(hasFullHouse([twoH, twoD, twoC, threeH, threeD])) // [2, 3]
-// console.log(hasFullHouse([twoH, twoD, twoC, threeH, threeD, fourH, fourD])) // [2, 4]
-// console.log(hasFullHouse([twoH, twoD, twoC, threeH, threeD, threeC, fourH, fourD])) // [3, 4]
+// console.log(hasFullHouse([twoH, twoD, twoC, threeH, threeD])) // [2H, 2D, 2C, 3H, 3D]
+// console.log(hasFullHouse([twoH, twoD, twoC, threeH, threeD, fourH, fourD])) // [2H, 2D, 2C, 4H, 4D]
+// console.log(hasFullHouse([twoH, twoD, twoC, threeH, threeD, threeC, fourH, fourD])) // [3H, 3D, 3C, 4H, 4D]
 
 // console.log(hasFourOfAKind([twoH, twoC, twoD, twoS, threeC, threeD, threeH])) // [2H, 2C, 2D, 2S, 3C/D/H]
 // console.log(hasFourOfAKind([twoH, threeC, threeD, threeH, threeS, oneD, thirteenD])) // [3H, 3C, 3D, 3S, 1D]
 
-// console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenD])) // [1D, 13D, 12D, 11D, 10D]
-// console.log(hasStraightFlush([oneD, twoD, threeD, fourD, fiveD])) // [1D, 5D, 4D, 3D, 2D]
+// console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenD])) // [10D, 11D, 12D, 13D, 1D]
+// console.log(hasStraightFlush([oneD, twoD, threeD, fourD, fiveD])) // [2D, 3D, 4D, 5D, 1D]
 // console.log(hasStraightFlush([sixC, sevenC, eightC, nineC, tenC])) // [6C, 7C, 8C, 9C, 10C]
-// console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenD, twoD, threeD, fourD, fiveD])) // [1D, 13D, 12D, 11D, 10D]
+// console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenD, twoD, threeD, fourD, fiveD])) // [10D, 11D, 12D, 13D, 1D]
 // console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenC])) // 0
 // console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, twoD])) // 0
 
