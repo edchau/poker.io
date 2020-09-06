@@ -48,7 +48,6 @@ io.on('connection', (socket) => {
 
     socket.on('getNewHand', (user) => {
         const hand = poker.generateHand()
-        console.log(hand)
         io.to(user.id).emit('hand', hand)
     })
 
@@ -123,8 +122,13 @@ io.on('connection', (socket) => {
     socket.on('round', () => {
         const user = getUser(socket.id)
         poker.getStartingPlayers(user.room)
+        const users = getUsersInRoom(user.room)
         const next = poker.getNextPlayer()
-        console.log("HI", next)
+
+        users.forEach(u => {
+            socket.emit('callHand', u)
+        })
+
         io.to(next.id).emit('playTurn', [true])
     })
 

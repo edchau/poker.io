@@ -180,7 +180,7 @@ const Chat = ({ location }) => {
                 suit1 = diamonds
             }
 
-            setTurnSuits([suit1])
+            setRiverSuits([suit1])
         })
 
         socket.on('turn', ({ card4 }) => {
@@ -236,7 +236,7 @@ const Chat = ({ location }) => {
             setTurn([])
             setFlop([])
             setPot(0)
-            socket.emit('round')
+            round()
         })
 
         socket.on('chips', (chips) => {
@@ -257,6 +257,10 @@ const Chat = ({ location }) => {
 
         socket.on('start', () => {
             setStart([])
+        })
+
+        socket.on('callHand', (user) => {
+            socket.emit('getNewHand', user)
         })
         
     }, [])
@@ -286,9 +290,6 @@ const Chat = ({ location }) => {
     }
 
     const round = () => {
-        users.forEach(u => {
-            socket.emit('getNewHand', u)
-        })
         setStart([true])
         socket.emit('round')
     }

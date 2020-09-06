@@ -3,7 +3,6 @@ import React from 'react'
 import './Community.css'
 
 import twoC from '../../icons/cards/2C.png'
-import twoD from '../../icons/cards/2D.png'
 
 const style = {height: '70px', width: '50px'}
 const invis = {height: '0px', width: '0px'}
