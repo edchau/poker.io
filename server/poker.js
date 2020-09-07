@@ -44,11 +44,11 @@ const generateHand = (id) => {
     // generates new hand (two cards) for player id
     const random1 = Math.floor(Math.random() * cardsInPlay.length)
     var card1 = deck[cardsInPlay[random1]]
+    cardsInPlay.splice(random1, 1)
     const random2 = Math.floor(Math.random() * cardsInPlay.length)
     var card2 = deck[cardsInPlay[random2]]
-    playerHands.push({id : id, hand : [card1, card2]})
-    cardsInPlay.splice(random1, 1)
     cardsInPlay.splice(random2, 1)
+    playerHands.push({id : id, hand : [card1, card2]})
     return {card1: card1, card2: card2}
 }
 
@@ -74,7 +74,7 @@ const generateOneCommunity = () => {
     const random = Math.floor(Math.random() * cardsInPlay.length)
     community.concat([deck[cardsInPlay[random]]])
     cardsInPlay.splice(random, 1)
-    return deck[random]
+    return deck[cardsInPlay[random]]
 }
 
 const Winner = () => {
@@ -528,10 +528,7 @@ elevenS = {rank : 11, suit : 'spade'}
 twelveD = {rank : 12, suit : 'diamond'}
 thirteenD = {rank : 13, suit : 'diamond'}
 
-// var n = 10
-// for (i = 0; i < n; i++) {
-    // generateOneCommunity()
-// }
+console.log(generateFlop())
 
 // console.log(sortHand([oneD, twoH, threeD, nineC, tenD, fiveH, eightC, thirteenD, sevenC]))
 
