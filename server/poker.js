@@ -107,10 +107,10 @@ const Winner = () => {
 
 
 const getBestHand = (cards) => {
-    // Of a list of 7 cards in 'CARDS', return the best hand possible. Assumes cards == length 7.
+    // Of a list of 7 cards in 'CARDS', return the best hand possible. Assumes cards.length == 7.
     // x = hasStraightFlush(cards)
     // if (x) { return x }
-    x = hasFourOfAKind(cards)
+    var x = hasFourOfAKind(cards)
     if (x) { return x }
     x = hasFullHouse(cards)
     if (x) { return x }
@@ -135,12 +135,7 @@ const compareHands = (hand1, hand2) => {
     var chn = compareHandNames(hand1[5], hand2[5])
     if (chn > -1) { return chn }
     var handName = hand1[5]
-    if (handName == 'High Card' || handName == 'Straight') {
-        return forwardCompareRanks(hand1, hand2)
-    } else if (handName == '1 Pair' || handName == '2 Pair'
-            || handName == 'Three of a kind' || handName == '') {
-        return backwardCompareRanks(hand1, hand2)
-    }
+    return forwardCompareRanks(hand1, hand2)
 }
 
 const forwardCompareRanks = (hand1, hand2) => {
@@ -157,19 +152,19 @@ const forwardCompareRanks = (hand1, hand2) => {
     return -1
 }
 
-const backwardCompareRanks = (hand1, hand2) => {
-    // Goes from last card to first, comparing the hands.
-    // Returns the same values as compareHands
-    // Assumes same input as compareHands
-    for (i = 4; i >= 0; i--) {
-        if (hand1[i] > hand2[i]) {
-            return 0
-        } else if (hand1[i] < hand2[i]) {
-            return 1
-        }
-    }
-    return -1
-}
+// const backwardCompareRanks = (hand1, hand2) => {
+//     // Goes from last card to first, comparing the hands.
+//     // Returns the same values as compareHands
+//     // Assumes same input as compareHands
+//     for (i = 4; i >= 0; i--) {
+//         if (hand1[i] > hand2[i]) {
+//             return 0
+//         } else if (hand1[i] < hand2[i]) {
+//             return 1
+//         }
+//     }
+//     return -1
+// }
 
 const compareHandNames = (name1, name2) => {
     // Returns 0 if name1 is a better hand than name2
@@ -288,11 +283,11 @@ const hasPairs = (cards) => {
     }
     // no pairs were found
     if (hand.length == 0) { return 0 }
-    // fill out the hands with high cards
+    // calculate # pairs before filling hand with high cards
     var numPairs = hand.length / 2
     var j = 0
     while (hand.length < 5) {
-        // singleton is ordered high to low
+        // singletons is ordered high to low
         hand.push(singletons[j])
         j++
     }
@@ -341,26 +336,28 @@ const hasStraight = (cards) => { // UNFINISHED NEEDS FIXING
     // ex: cards = [ace, two, three, four, five, ten, king], hasStraight(cards) = [ace, two, three, four, five]
     // ex: cards = [ace, two, ten, jack, queen, king], hasStraight(cards) = [ten, jack]
     cards = sortHand(cards)
-    var set = [cards[0]]
+    var set = cards.slice()
     for (i = 1; i < cards.length; i++) {
-        if (set[set.length-1].rank == cards[i].rank - 1) {
-            set.push(cards[i])
+        if (set[i].rank == set[i-1].rank) {
+            set.splice(i, 1)
         }
     }
     for (i = set.length-1; i >= 4; i--) {
-        if ([set.length - 1].rank == 1  
+        if (set[set.length-1].rank == 1  
                 && (set[i-1].rank == 5 || set[i-1].rank == 13)
                 && set[i-1].rank - 1 == set[i-2].rank
                 && set[i-2].rank - 1 == set[i-3].rank
                 && set[i-3].rank - 1 == set[i-4].rank) {
-                    set.unshift("Straight")
-                    return set.slice(i-4)
+                    var straight = []
+                    straight.push(set[set.length-1], set[i-1], set[i-2], set[i-3], set[i-4], "Straight")
+                    return straight
         } else if (set[i].rank - 1 == set[i-1].rank
                 && set[i-1].rank - 1 == set[i-2].rank
                 && set[i-2].rank - 1 == set[i-3].rank
                 && set[i-3].rank - 1 == set[i-4].rank) {
-                    set.unshift("Straight")
-                    return set.slice(i-4)
+                    var straight = []
+                    straight.push(set[i], set[i-1], set[i-2], set[i-3], set[i-4], "Straight")
+                    return straight
         }
     }   
     return 0
@@ -463,7 +460,6 @@ const hasStraightFlush = (cards) => {
     var flushCards = hasFlush(cards)
     if (flushCards == 0) {
         return 0
-    // 1, 2, 3, 4, 5 || 1, 13, 12, 11, 10
     } else {
         var sf = hasStraight(flushCards.slice(0,5))
         if (sf != 0) {
@@ -528,7 +524,7 @@ elevenS = {rank : 11, suit : 'spade'}
 twelveD = {rank : 12, suit : 'diamond'}
 thirteenD = {rank : 13, suit : 'diamond'}
 
-console.log(generateFlop())
+// console.log(generateFlop())
 
 // console.log(sortHand([oneD, twoH, threeD, nineC, tenD, fiveH, eightC, thirteenD, sevenC]))
 
@@ -568,26 +564,26 @@ console.log(generateFlop())
 // console.log(hasFourOfAKind([twoH, twoC, twoD, twoS, threeC, threeD, threeH])) // [2H, 2C, 2D, 2S, 3C/D/H]
 // console.log(hasFourOfAKind([twoH, threeC, threeD, threeH, threeS, oneD, thirteenD])) // [3H, 3C, 3D, 3S, 1D]
 
-// console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenD])) // [10D, 11D, 12D, 13D, 1D]
-// console.log(hasStraightFlush([oneD, twoD, threeD, fourD, fiveD])) // [2D, 3D, 4D, 5D, 1D]
-// console.log(hasStraightFlush([sixC, sevenC, eightC, nineC, tenC])) // [6C, 7C, 8C, 9C, 10C]
-// console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenD, twoD, threeD, fourD, fiveD])) // [10D, 11D, 12D, 13D, 1D]
-// console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenC])) // 0
-// console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, twoD])) // 0
+console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenD])) // [1D, 13D, 12D, 11D, 10D]
+console.log(hasStraightFlush([oneD, twoD, threeD, fourD, fiveD])) // [1D, 5D, 4D, 3D, 2D]
+console.log(hasStraightFlush([sixC, sevenC, eightC, nineC, tenC])) // [10C, 9C, 8C, 7C, 6C]
+console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenD, twoD, threeD, fourD, fiveD])) // [1D, 13D, 12D, 11D, 10D]
+console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, tenC])) // 0
+console.log(hasStraightFlush([oneD, thirteenD, twelveD, elevenD, twoD])) // 0
 
-// playerHands.push({id : 1, hand : [oneD, tenD]}, 
-//                  {id : 2, hand : [elevenD, elevenH]})
+// playerHands.push({id : 1, hand : [twoC, tenD]}, 
+//                  {id : 2, hand : [elevenD, elevenH]}) // winner is 2
 // community.push(twoD, threeD, eightC, tenC, elevenS)
 // console.log(Winner())
 
-// playerHands.push({id : 1, hand : [oneD, tenD]}, 
+// playerHands.push({id : 1, hand : [oneD, tenD]},  // winner is 1
 //                  {id : 2, hand : [elevenD, elevenH]})
 // community.push(twoD, threeD, eightC, thirteenD, elevenS)
 // console.log(Winner())
 
-// playerHands.push({id : 1, hand : [threeH, threeC]}, 
+// playerHands.push({id : 1, hand : [threeH, threeC]},  // winner is 1
 //                  {id : 2, hand : [elevenD, elevenH]})
 // community.push(threeS, threeD, eightC, thirteenD, elevenS)
 // console.log(Winner())
 
-//module.exports = { getStartingPlayers, getNextPlayer }
+// module.exports = { getStartingPlayers, getNextPlayer }
