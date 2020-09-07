@@ -247,11 +247,8 @@ const Chat = ({ location }) => {
             setPot(pot)
         })
 
-        socket.on('player', (player) => {
-
-        })
-
         socket.on('playTurn', (play) => {
+            console.log("RESETTING PLAY")
             setPlay(play)
         })
 

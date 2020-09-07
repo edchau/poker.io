@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 5000
 const router = require('./router')
 const users = require('./users')
 const poker = require('./poker')
+const { Winner } = require('./poker')
 
 const app = express()
 const server = http.createServer(app)
@@ -16,7 +17,11 @@ const io = socketio(server)
 
 app.use(router)
 
-// deck = ['twoC', 'twoD', 'twoS', 'twoH']
+
+const hearts = ["A♡", "2♡", "3♡", "4♡", "5♡", "6♡", "7♡", "8♡", "9♡", "10♡", "J♡", "Q♡", "K♡"]
+const spades = ["A♤", "2♤", "3♤", "4♤", "5♤", "6♤", "7♤", "8♤", "9♤", "10♤", "J♤", "Q♤", "K♤"]
+const clubs = ["A♧", "2♧", "3♧", "4♧", "5♧", "6♧", "7♧", "8♧", "9♧", "10♧", "J♧", "Q♧", "K♧"]
+const diamonds = ["A♢", "2♢", "3♢", "4♢", "5♢", "6♢", "7♢", "8♢", "9♢", "10♢", "J♢", "Q♢", "K♢"]
 
 io.on('connection', (socket) => {
     socket.on('join', ({ name, room }, callback) => {
@@ -47,7 +52,7 @@ io.on('connection', (socket) => {
     })
 
     socket.on('getNewHand', (user) => {
-        const hand = poker.generateHand()
+        const hand = poker.generateHand(user.id)
         io.to(user.id).emit('hand', hand)
     })
 
@@ -65,7 +70,6 @@ io.on('connection', (socket) => {
         const user = getUser(socket.id)
 
         const flop = poker.generateFlop()
-        console.log(flop)
 
         io.to(user.room).emit('flop', flop)
     })
@@ -74,7 +78,6 @@ io.on('connection', (socket) => {
         const user = getUser(socket.id)
 
         const turn = poker.generateTurn()
-        console.log(turn)
 
         io.to(user.room).emit('turn', turn)
     })
@@ -83,7 +86,6 @@ io.on('connection', (socket) => {
         const user = getUser(socket.id)
 
         const river = poker.generateRiver()
-        console.log(river)
 
         io.to(user.room).emit('river', river)
     })
@@ -92,9 +94,9 @@ io.on('connection', (socket) => {
         const user = getUser(socket.id)
         io.to(socket.id).emit('playTurn', [])
         var nextUser = poker.getNextPlayer()
+        let res = false
         if (nextUser == null) {
             const round = poker.getRoundCount()
-            console.log(round)
             if (round == 1) {
                 socket.emit('callFlop')
             } else if (round == 2) {
@@ -105,16 +107,26 @@ io.on('connection', (socket) => {
                 const users = getUsersInRoom(user.room)
 
                 users.forEach(u => {
+                    console.log(u)
                     io.to(u.id).emit('playTurn', [])
                 })
         
-                console.log("WIN")
+                var w = Winner()
+                var wid = w.id
+                var winner = getUser(wid)
+                console.log("WINNER: ", w)
+
+                // convert to card string
+                io.to(user.room).emit('message', {user: "", text: winner.name + " won with "})
 
                 io.to(user.room).emit('reset')
+                res = true
             }
-            nextUser = poker.getNextPlayer()
+            if (!res) {
+                nextUser = poker.getNextPlayer()
+            }
         }
-        if (nextUser != null) {
+        if (!res && nextUser != null) {
             io.to(nextUser.id).emit('playTurn', [true])
         }
     })
@@ -128,7 +140,7 @@ io.on('connection', (socket) => {
         users.forEach(u => {
             socket.emit('callHand', u)
         })
-
+        console.log(getUser(next.id))
         io.to(next.id).emit('playTurn', [true])
     })
 

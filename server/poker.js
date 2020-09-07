@@ -25,28 +25,35 @@ const restart = () => {
     roundCount = 0
     pot = 0
     ind = 0
-    community = 0
+    community = []
     playerHands = []
     cardsInPlay = Array.from(Array(52).keys())
-
 }
 
 const fold = (id) => {
-    //  remove player from active players
-    const index = activePlayers.findIndex((player) => player.id === id)
-    
-    if (index !== -1) {
-        activePlayers.splice(index, 1)[0]
+    // remove player from activePlayers
+    // remove the hand from playerHands
+    const playerIndex = activePlayers.findIndex((player) => player.id === id)
+    if (playerIndex !== -1) {
+        activePlayers.splice(playerIndex, 1)
     }
+    const handIndex = activePlayers.findIndex((hand) => hand.id === id)
+    if (handIndex !== -1) {
+        playerHands.splice(handIndex, 1)
+    }
+
 }
 
-const generateHand = () => {
-    // generates new hand (two cards)
+const generateHand = (id) => {
+    // generates new hand (two cards) for player id
     const random1 = Math.floor(Math.random() * cardsInPlay.length)
-    cardsInPlay.splice(random1, 1)
+    var card1 = deck[cardsInPlay[random1]]
     const random2 = Math.floor(Math.random() * cardsInPlay.length)
+    var card2 = deck[cardsInPlay[random2]]
+    playerHands.push({id : id, hand : [card1, card2]})
+    cardsInPlay.splice(random1, 1)
     cardsInPlay.splice(random2, 1)
-    return {card1: deck[random1], card2: deck[random2]} 
+    return {card1: card1, card2: card2}
 }
 
 const generateFlop = () => {
@@ -57,29 +64,49 @@ const generateFlop = () => {
 }
 
 const generateTurn = () => {
+    // generate 1 card for the turn
     return {card4: generateOneCommunity()}
 }
 
 const generateRiver = () => {
+    // generate 1 card for the river
     return {card5: generateOneCommunity()}
 }
 
 const generateOneCommunity = () => {
-    // generate 1 card for turn/river
+    // generate 1 card from deck for the community cards
     const random = Math.floor(Math.random() * cardsInPlay.length)
+    community.concat([deck[cardsInPlay[random]]])
     cardsInPlay.splice(random, 1)
-    community += [deck[random]]
     return deck[random]
 }
 
 const Winner = () => {
     // determine winner given users and community cards
-    if (community.length < 5) {
+    // assume the hand has went to showdown (multiple players, 5 community cards, bets in)
+    var winner = playerHands[0]
+    var winnerHand = getBestHand(winner.hand.concat(community))
+    var ties = []
+    for (var i = 1; i < playerHands.length; i++) {
+        var player = playerHands[i]
+        var playerHand = getBestHand(player.hand.concat(community))
 
-    } else {
-        var winner = activePlayers[0]
-        var bestHand = getBestHand([winner])
+        var comparison = compareHands(winnerHand, playerHand)
+        if (comparison == 1) {
+            winner = player
+            winnerHand = playerHand
+        } else if (comparison == -1) {
+            if (!ties.includes(winner.id)) {
+                ties.push(winner.id)
+            }
+            ties.push(player.id)
+        } // else, the winner is still the winner
     }
+    if (ties.length > 0) {
+        return ties
+    }
+    return winner
+    
 }
 
 const getBestHand = (cards) => {
@@ -478,7 +505,6 @@ const getRoundCount = () => {
 
 const getNextPlayer = () => {
     if(ind >= activePlayers.length) {
-        console.log('end round')
         ind = 0
         roundCount += 1
         if(roundCount == 5) {
@@ -495,4 +521,4 @@ const getNextPlayer = () => {
 
 module.exports = { generateHand, getStartingPlayers, getNextPlayer, 
                     getRoundCount, generateFlop, generateTurn, 
-                    generateRiver }
+                    generateRiver, Winner }
